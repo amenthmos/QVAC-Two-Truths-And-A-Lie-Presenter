@@ -21,6 +21,18 @@ Built on [Tether's QVAC SDK](https://www.npmjs.com/package/@qvac/sdk) — all in
 
 The app never judges or guesses which statement is the lie — the model only writes a playful intro line, and your three statements are inserted verbatim by app code, not rewritten by the model.
 
+## Example
+
+**Input:** statements `I have run a marathon` / `I once met a former U.S. president` / `I cannot swim`
+
+**Output:**
+```
+Intro: The floor is yours to walk, talk, and test each other's knowledge.
+1. I have run a marathon
+2. I once met a former U.S. president
+3. I cannot swim
+```
+
 ## License
 
 MIT
