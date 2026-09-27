@@ -45,7 +45,12 @@ export async function generate(modelId, statements) {
       },
       { role: "user", content: "Get the group ready to play." },
       { role: "assistant", content: "Three statements, one giant lie — let's see who can spot the fake!" },
-      { role: "user", content: "Get the group ready to play." },
+      // The trailing turn used to repeat the exact same text as the few-shot
+      // example above it ("Get the group ready to play."). With an identical
+      // prompt right after its own example answer, a small model tends to
+      // just parrot the previous assistant reply verbatim instead of writing
+      // a fresh line — wording it differently avoids that trap.
+      { role: "user", content: "Now write a fresh intro line to kick off this round." },
     ],
     stream: true,
     completionOpts: { temperature: 0.9, maxTokens: 80 },
