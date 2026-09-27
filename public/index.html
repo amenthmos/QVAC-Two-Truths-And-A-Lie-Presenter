@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>QVAC Two Truths and a Lie Presenter</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: linear-gradient(160deg, #2c1250 0%, #4a1a6b 100%);
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    color: #f5edff;
+    display: flex;
+    justify-content: center;
+    padding: 48px 20px;
+  }
+  .wrap { width: 100%; max-width: 560px; }
+  .card {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 16px;
+    padding: 34px 36px;
+  }
+  .brand { font-size: 0.7rem; letter-spacing: 3px; text-transform: uppercase; color: #ffb84d; font-weight: 700; margin-bottom: 6px; }
+  h1 { font-size: 1.5rem; margin: 0 0 6px; color: #fff; font-weight: 800; }
+  .subtitle { color: #d8c8ee; font-size: 0.9rem; margin-bottom: 26px; }
+  .field-label { font-size: 0.78rem; color: #d8c8ee; margin-bottom: 6px; font-weight: 600; }
+  input[type=text] {
+    width: 100%;
+    padding: 11px 12px;
+    border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.2);
+    background: rgba(0,0,0,0.2);
+    color: #f5edff;
+    font-family: inherit;
+    font-size: 0.95rem;
+    margin-bottom: 16px;
+  }
+  input[type=text]::placeholder { color: #a595c0; }
+  input[type=text]:focus { outline: none; border-color: #ffb84d; }
+  button.action {
+    padding: 11px 24px;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+    background: #ffb84d;
+    color: #2c1250;
+  }
+  button.action:hover:not(:disabled) { background: #e0a03e; }
+  button.action:disabled { opacity: 0.4; cursor: not-allowed; }
+  .status { margin-top: 14px; font-size: 0.85rem; color: #b8a5d6; min-height: 1.2em; }
+  .intro-line { margin-top: 22px; font-size: 1.15rem; font-weight: 700; text-align: center; color: #ffb84d; }
+  .result-list { margin-top: 18px; list-style: none; padding: 0; counter-reset: snum; }
+  .result-list li {
+    counter-increment: snum;
+    padding: 14px 16px 14px 40px;
+    position: relative;
+    background: rgba(255,255,255,0.08);
+    border-radius: 8px;
+    margin-bottom: 10px;
+    font-size: 1rem;
+    line-height: 1.5;
+    color: #f5edff;
+  }
+  .result-list li::before {
+    content: counter(snum);
+    position: absolute;
+    left: 12px;
+    top: 14px;
+    font-weight: 800;
+    color: #ffb84d;
+    font-size: 0.85rem;
+  }
+  .footer-note { color: #b8a5d6; font-size: 0.78rem; text-align: center; margin-top: 22px; }
+  .spinner {
+    display: inline-block;
+    width: 12px; height: 12px;
+    border: 2px solid rgba(255,255,255,0.2);
+    border-top-color: #ffb84d;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    vertical-align: middle;
+    margin-right: 8px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <div class="brand">On-Device Icebreaker</div>
+      <h1>Two Truths and a Lie Presenter</h1>
+      <p class="subtitle">Enter 3 statements about yourself (you decide which are true). We just format them into a reveal-ready game — no judging.</p>
+
+      <div class="field-label">STATEMENT 1</div>
+      <input type="text" id="s1Input" placeholder="e.g. I've run a marathon" />
+      <div class="field-label">STATEMENT 2</div>
+      <input type="text" id="s2Input" placeholder="e.g. I once met a former U.S. president" />
+      <div class="field-label">STATEMENT 3</div>
+      <input type="text" id="s3Input" placeholder="e.g. I can't swim" />
+      <button class="action" id="generateBtn">Present My Statements</button>
+      <div class="status" id="status"></div>
+      <div id="introBox"></div>
+      <ul class="result-list" id="resultList"></ul>
+    </div>
+
+    <p class="footer-note">Everything runs locally on your machine. No text ever leaves this device.</p>
+  </div>
+
+  <script>
+    function escapeHtml(str) {
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    const s1Input = document.getElementById('s1Input');
+    const s2Input = document.getElementById('s2Input');
+    const s3Input = document.getElementById('s3Input');
+    const generateBtn = document.getElementById('generateBtn');
+    const status = document.getElementById('status');
+    const introBox = document.getElementById('introBox');
+    const resultList = document.getElementById('resultList');
+
+    async function generate() {
+      const statement1 = s1Input.value.trim();
+      const statement2 = s2Input.value.trim();
+      const statement3 = s3Input.value.trim();
+      if (!statement1 || !statement2 || !statement3) return;
+      generateBtn.disabled = true;
+      introBox.innerHTML = '';
+      resultList.innerHTML = '';
+      status.innerHTML = '<span class="spinner"></span>Setting the stage...';
+
+      try {
+        const res = await fetch('/api/present', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ statement1, statement2, statement3 }),
+        });
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+
+        status.textContent = '';
+        introBox.innerHTML = `<div class="intro-line">${escapeHtml(data.intro)}</div>`;
+        resultList.innerHTML = data.statements.map(s => `<li>${escapeHtml(s)}</li>`).join('');
+      } catch (err) {
+        status.textContent = 'Error: ' + err.message;
+      } finally {
+        generateBtn.disabled = false;
+      }
+    }
+
+    generateBtn.addEventListener('click', generate);
+  </script>
+</body>
+</html>
